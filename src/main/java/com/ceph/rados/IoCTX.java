@@ -27,6 +27,7 @@ import com.sun.jna.Native;
 import com.sun.jna.Memory;
 import com.sun.jna.ptr.LongByReference;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -260,6 +261,89 @@ public class IoCTX extends RadosBase {
      */
     public void write(String oid, String buf) throws RadosException {
         this.write(oid, buf.getBytes());
+    }
+
+    /**
+     * Write an entire object
+     * The object is filled with the provided data. If the object exists, it is atomically truncated and then written.
+     *
+     * @param oid
+     *          The object to write to
+     * @param buf
+     *          The content to write
+     * @param len
+     *          The length of the data to write
+     * @throws RadosException
+     */
+    public void writeFull(final String oid, final ByteBuffer buf, final int len) throws RadosException {
+        handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return rados.rados_write_full(getPointer(), oid, buf, len);
+            }
+        }, "Failed to write %s bytes to %s", len, oid);
+    }
+
+    /**
+     * Write to an object without an offset
+     *
+     * @param oid
+     *          The object to write to
+     * @param buf
+     *          The content to write
+     * @throws RadosException
+     */
+    public void write(String oid, ByteBuffer buf) throws RadosException {
+        this.writeFull(oid, buf, buf.limit() - buf.position());
+    }
+
+    public int read(final String oid, final int length, final long offset, final ByteBuffer buf)
+            throws RadosException {
+        if (length < 0) {
+            throw new IllegalArgumentException("Length shouldn't be a negative value");
+        }
+        if (offset < 0) {
+            throw new IllegalArgumentException("Offset shouldn't be a negative value");
+        }
+
+        return handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return rados.rados_read(getPointer(), oid, buf, length, offset);
+            }
+        }, "Failed to read object %s using offset %s and length %s", oid, offset, length);
+    }
+
+    /**
+     * Append data to an object
+     *
+     * @param oid
+     *           The name to append to
+     * @param buf
+     *           The data to append
+     * @throws RadosException
+     */
+    public void append(String oid, ByteBuffer buf) throws RadosException {
+        this.append(oid, buf, buf.limit()-buf.position());
+    }
+
+    /**
+     *
+     * @param oid
+     *           The name to append to
+     * @param buf
+     *           The data to append
+     * @param len
+     *           The number of bytes to write from buf
+     * @throws RadosException
+     */
+    public void append(final String oid, final ByteBuffer buf, final int len) throws RadosException {
+        handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return rados.rados_append(getPointer(), oid, buf, len);
+            }
+        }, "Failed appending %s bytes to object %s", len, oid);
     }
 
     /**
