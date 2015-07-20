@@ -44,9 +44,7 @@ public class Rados extends RadosBase {
      *            the cephx id to authenticate with
      */
     public Rados(String id) {
-        PointerByReference clusterPtr = new PointerByReference();
-        rados.rados_create(clusterPtr, id);
-        this.clusterPtr = clusterPtr.getValue();
+        init(id);
     }
 
 
@@ -59,9 +57,7 @@ public class Rados extends RadosBase {
 	 */
 
 	public Rados (String clustername, String name, long flags) {
-		PointerByReference clusterPtr = new PointerByReference();
-		rados.rados_create2(clusterPtr, clustername, name, flags);
-		this.clusterPtr = clusterPtr.getValue();
+		init(clustername, name, flags);
 	}
 
 
@@ -70,6 +66,18 @@ public class Rados extends RadosBase {
      */
     public Rados() {
         this(null);
+    }
+
+    protected void init(String id){
+        PointerByReference clusterPtr = new PointerByReference();
+        rados.rados_create(clusterPtr, id);
+        this.clusterPtr = clusterPtr.getValue();
+    }
+
+    protected void init(String clustername, String name, long flags){
+        PointerByReference clusterPtr = new PointerByReference();
+        rados.rados_create2(clusterPtr, clustername, name, flags);
+        this.clusterPtr = clusterPtr.getValue();
     }
 
     /**
